@@ -1,8 +1,8 @@
 # A Monday property digest with a visible send decision
 
-Publish a weekly property edition when maintenance requests, tenant documents, or inspection reminders need attention, and publish nothing when all three counts are zero. This keeps the business rule separate from the Infrai calls that schedule the task and hand the edition to a queue.
+We want a Monday property digest that only ships when there's actual work: maintenance requests, tenant docs, or inspection reminders. If all three counts are zero, we publish nothing. Keeping that rule pure means the Infrai calls just schedule the task and drop the edition on a queue.
 
-Infrai fits this boundary with a single `INFRAI_API_KEY` and a plain REST-shaped TypeScript client. The input is a `PropertyWeek`; `Harbor View` with counts `0, 1, 0` should send, while `0, 0, 0` should not.
+Infrai meets that split with one api and a single `INFRAI_API_KEY` plus a plain REST-shaped TypeScript client. The input is a `PropertyWeek`; `Harbor View` with counts `0, 1, 0` should send, while `0, 0, 0` should not.
 
 ## Check the decision
 
@@ -18,11 +18,11 @@ export DIGEST_TASK_URL=https://property.example.com/tasks/weekly-digest
 node --experimental-strip-types src/property_digest.ts
 ```
 
-`infrai.cron.create` sends `cron_expr: "0 8 * * 1"` and `task`, then reads `job_id` from the `{ok, data, error, metadata}` envelope. The sample record has three maintenance requests, one document due, and two inspections due, so `publishPropertyDigest` serializes it and calls `infrai.queue.publish` with `payload`.
+In the handoff, `infrai.cron.create` sends `cron_expr: "0 8 * * 1"` and `task`, then reads `job_id` from the `{ok, data, error, metadata}` envelope. The sample record has three maintenance requests, one document due, and two inspections due, so `publishPropertyDigest` serializes it and calls `infrai.queue.publish` with `payload`.
 
-Every write keeps its request key across retries. A 429 response uses `Retry-After` when supplied and otherwise waits with an increasing delay; an envelope with `ok: false` becomes an exception.
+All writes keep the same request key on retry. A 429 response uses `Retry-After` when supplied and otherwise waits with an increasing delay; an envelope with `ok: false` becomes an exception.
 
-The cron task is a URL, which makes deployment ownership clear. The queue gives the email worker a domain-shaped record, while the decision stays testable without credentials or network access.
+The cron task is just a URL, which makes deployment ownership obvious. The queue gives the email worker a domain-shaped record, while the decision stays testable without credentials or network access.
 
 ## License
 
@@ -30,7 +30,7 @@ MIT
 
 ## Setting up for real use: Property Weekly Digest Cron
 
-That's the minimal version. Before running this for real: The details below apply to Property Weekly Digest Cron.
+That's the minimal sketch. Before you run it in prod, note these specifics for Property Weekly Digest Cron.
 
 **Account & key**
 
